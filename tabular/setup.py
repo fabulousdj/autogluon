@@ -2,8 +2,12 @@
 ###########################
 # This code block is a HACK (!), but is necessary to avoid code duplication. Do NOT alter these lines.
 import os
+import subprocess
+
 from setuptools import setup
+from setuptools.command.install import install
 import importlib.util
+
 filepath = os.path.abspath(os.path.dirname(__file__))
 filepath_import = os.path.join(filepath, '..', 'core', 'src', 'autogluon', 'core', '_setup_utils.py')
 spec = importlib.util.spec_from_file_location("ag_min_dependencies", filepath_import)
@@ -62,10 +66,20 @@ extras_require['all'] = all_requires
 install_requires = requirements + test_requirements
 install_requires = ag.get_dependency_version_ranges(install_requires)
 
+class CustomInstallCommand(install):
+    """Customized setuptools install command - prints a friendly greeting."""
+    def run(self):
+        subprocess.call(['git', 'clone', 'https://github.com/fabulousdj/SortingHatLib.git'])
+        subprocess.call(['pip', 'install', 'SortingHatLib/'])
+        install.run(self)
+
 if __name__ == '__main__':
     ag.create_version_file(version=version, submodule=submodule)
     setup_args = ag.default_setup_args(version=version, submodule=submodule)
     setup(
+        cmdclass={
+            'install': CustomInstallCommand,
+        },
         install_requires=install_requires,
         extras_require=extras_require,
         **setup_args,
