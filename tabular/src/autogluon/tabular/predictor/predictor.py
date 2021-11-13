@@ -25,6 +25,8 @@ from ..configs.hyperparameter_configs import get_hyperparameter_config
 from ..configs.feature_generator_presets import get_default_feature_generator
 from ..configs.presets_configs import tabular_presets_dict
 from ..learner import AbstractLearner, DefaultLearner
+from ..metadata.metadata_engine import MetadataEngine
+from ..metadata.sortinghat import SortingHatFeatureMetadataEngine
 from ..trainer import AbstractTrainer
 
 logger = logging.getLogger()  # return root logger
@@ -200,6 +202,7 @@ class TabularPredictor:
         learner_kwargs = kwargs.pop('learner_kwargs', dict())
         quantile_levels = kwargs.get('quantile_levels', None)
 
+        self._metadata_engine: MetadataEngine = SortingHatFeatureMetadataEngine()
         self._learner: AbstractLearner = learner_type(path_context=path, label=label, feature_generator=None, eval_metric=eval_metric, problem_type=problem_type,
                                                       quantile_levels=quantile_levels,
                                                       sample_weight=self.sample_weight, weight_evaluation=self.weight_evaluation, groups=groups, **learner_kwargs)
@@ -481,6 +484,10 @@ class TabularPredictor:
             In this case, `train_data` is input into :meth:`autogluon.tabular.FeatureMetadata.from_df` to infer `feature_metadata`.
             If 'infer' incorrectly assumes the dtypes of features, consider explicitly specifying `feature_metadata`.
         **kwargs :
+            use_metadata_engine : boolean, default = 'False'
+                This flag indicates whether to use any feature metadata engine to infer feature metadata (like feature types) beforehand in case feature_metadata='infer'.
+                If set to true, the SortingHat-powered metadata engine will be used.
+                Otherwise, the default heuristic feature metadata inference logic will be used.
             auto_stack : bool, default = False
                 Whether AutoGluon should automatically utilize bagging and multi-layer stack ensembling to boost predictive accuracy.
                 Set this = True if you are willing to tolerate longer training times in order to maximize predictive accuracy!
@@ -683,6 +690,7 @@ class TabularPredictor:
         ag_args_ensemble = kwargs['ag_args_ensemble']
         excluded_model_types = kwargs['excluded_model_types']
         use_bag_holdout = kwargs['use_bag_holdout']
+        use_metadata_engine = kwargs['use_metadata_engine']
 
         if ag_args is None:
             ag_args = {}
@@ -713,7 +721,10 @@ class TabularPredictor:
         ###################################
 
         if feature_metadata is not None and isinstance(feature_metadata, str) and feature_metadata == 'infer':
-            feature_metadata = None
+            if use_metadata_engine:
+                feature_metadata = self._metadata_engine.infer_feature_metadata(train_data)
+            else:
+                feature_metadata = None
         self._set_feature_generator(feature_generator=feature_generator, feature_metadata=feature_metadata, init_kwargs=feature_generator_init_kwargs)
 
         num_bag_folds, num_bag_sets, num_stack_levels = self._sanitize_stack_args(
