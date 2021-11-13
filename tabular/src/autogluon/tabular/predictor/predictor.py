@@ -278,6 +278,7 @@ class TabularPredictor:
             presets=None,
             hyperparameters=None,
             feature_metadata='infer',
+            use_metadata_engine=False,
             **kwargs):
         """
         Fit models to predict a column of a data table (label) based on the other columns (features).
@@ -483,11 +484,11 @@ class TabularPredictor:
             If 'infer', will automatically construct a FeatureMetadata object based on the properties of `train_data`.
             In this case, `train_data` is input into :meth:`autogluon.tabular.FeatureMetadata.from_df` to infer `feature_metadata`.
             If 'infer' incorrectly assumes the dtypes of features, consider explicitly specifying `feature_metadata`.
+        use_metadata_engine : boolean, default = 'False'
+            This flag indicates whether to use any feature metadata engine to infer feature metadata (like feature types) beforehand in case feature_metadata='infer'.
+            If set to true, the SortingHat-powered metadata engine will be used.
+            Otherwise, the default heuristic feature metadata inference logic will be used.
         **kwargs :
-            use_metadata_engine : boolean, default = 'False'
-                This flag indicates whether to use any feature metadata engine to infer feature metadata (like feature types) beforehand in case feature_metadata='infer'.
-                If set to true, the SortingHat-powered metadata engine will be used.
-                Otherwise, the default heuristic feature metadata inference logic will be used.
             auto_stack : bool, default = False
                 Whether AutoGluon should automatically utilize bagging and multi-layer stack ensembling to boost predictive accuracy.
                 Set this = True if you are willing to tolerate longer training times in order to maximize predictive accuracy!
@@ -690,7 +691,6 @@ class TabularPredictor:
         ag_args_ensemble = kwargs['ag_args_ensemble']
         excluded_model_types = kwargs['excluded_model_types']
         use_bag_holdout = kwargs['use_bag_holdout']
-        use_metadata_engine = kwargs['use_metadata_engine']
 
         if ag_args is None:
             ag_args = {}
