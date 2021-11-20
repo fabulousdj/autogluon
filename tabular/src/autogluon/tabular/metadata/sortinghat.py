@@ -44,14 +44,15 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
         S_IMAGE_PATH = 'image_path'
         S_STACK = 'stack'
     """
-    def __init__(self):
-        self._sh_obj_raw_types = {3, 4, 5, 6, 7, 8}
 
     def infer_feature_metadata(self, df: pd.DataFrame):
-        features = [col for col in df]
         data_featurized = pl.FeatureExtraction(pl.FeaturizeFile(df))
         data_featurized = data_featurized.fillna(0)
         y_RF = pl.Load_RF(data_featurized)
+        return self.to_feature_metadata(df, y_RF)
+
+    def to_feature_metadata(self, df: pd.DataFrame, y_RF):
+        features = [col for col in df]
         type_map_sh = {features[i]: y_RF[i] for i in range(len(features))}
         type_map_raw_default = get_type_map_raw(df)
         type_map_special_default = get_type_map_special(df)
@@ -70,7 +71,7 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
             elif sh_inferred_type == 2:
                 type_map_raw[f] = R_DATETIME
             # object
-            elif sh_inferred_type in self._sh_obj_raw_types:
+            elif sh_inferred_type in {3, 4, 5, 6, 7, 8}:
                 type_map_raw[f] = R_OBJECT
             else:
                 # numeric -> fallback to AG's type inference to determine whether it's R_INT or R_FLOAT
