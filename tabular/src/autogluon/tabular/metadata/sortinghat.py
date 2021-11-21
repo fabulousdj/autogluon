@@ -53,7 +53,7 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
 
     def to_feature_metadata(self, df: pd.DataFrame, y_RF):
         features = [col for col in df]
-        type_map_sh = {features[i]: y_RF[i] for i in range(len(features))}
+        type_map_sh = {features[i]: y_RF[i] for i in range(len(y_RF))}
         type_map_raw_default = get_type_map_raw(df)
         type_map_special_default = get_type_map_special(df)
         type_map_raw = self._get_raw_type_map(features, type_map_sh, type_map_raw_default)
@@ -63,6 +63,9 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
     def _get_raw_type_map(self, features, type_map_sh, type_map_raw_default):
         type_map_raw = {}
         for f in features:
+            if f not in type_map_sh:
+                type_map_raw[f] = type_map_raw_default[f]
+                continue
             sh_inferred_type = type_map_sh[f]
             # category
             if sh_inferred_type == 1:
@@ -82,6 +85,10 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
     def _get_special_type_map(self, features, type_map_sh, type_map_special_default):
         type_map_special = {}
         for f in features:
+            if f not in type_map_sh:
+                if f in type_map_special_default:
+                    type_map_special[f] = type_map_special_default[f]
+                continue
             sh_inferred_type = type_map_sh[f]
             # datetime
             if sh_inferred_type == 2:
