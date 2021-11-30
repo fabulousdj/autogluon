@@ -4,9 +4,9 @@ import pandas as pd
 import sortinghat.pylib as pl
 
 from autogluon.core.features.feature_metadata import FeatureMetadata
-from autogluon.core.features.infer_types import get_type_map_raw, get_type_group_map_special, get_type_map_special, \
+from autogluon.core.features.infer_types import get_type_map_raw, get_type_map_special, \
     get_type_group_map
-from autogluon.core.features.types import R_INT, R_FLOAT, R_OBJECT, R_CATEGORY, R_DATETIME, S_TEXT, R_BOOL, S_BOOL
+from autogluon.core.features.types import R_OBJECT, R_CATEGORY, S_TEXT, R_BOOL, S_DATETIME_AS_OBJECT
 from autogluon.tabular.metadata.metadata_engine import MetadataEngine
 
 logger = logging.getLogger(__name__)
@@ -70,11 +70,8 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
             # category
             if sh_inferred_type == 1:
                 type_map_raw[f] = R_BOOL if type_map_raw_default[f] == R_BOOL else R_CATEGORY
-            # datetime
-            elif sh_inferred_type == 2:
-                type_map_raw[f] = R_DATETIME
             # object
-            elif sh_inferred_type in {3, 4, 5, 6, 7, 8}:
+            elif sh_inferred_type in {2, 3, 4, 5, 6, 7, 8}:
                 type_map_raw[f] = R_OBJECT
             else:
                 # numeric -> fallback to AG's type inference to determine whether it's R_INT or R_FLOAT
@@ -92,8 +89,7 @@ class SortingHatFeatureMetadataEngine(MetadataEngine):
             sh_inferred_type = type_map_sh[f]
             # datetime
             if sh_inferred_type == 2:
-                if f in type_map_special_default:
-                    type_map_special[f] = type_map_special_default[f]
+                type_map_special[f] = S_DATETIME_AS_OBJECT
             # sentence
             elif sh_inferred_type == 3:
                 type_map_special[f] = S_TEXT
